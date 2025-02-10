@@ -4,12 +4,15 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
+[![Security Policy](https://img.shields.io/badge/Security-Policy-red.svg)](SECURITY.md)
 
 A collection of standardized development rules and best practices for projects built with the [Cursor IDE](https://cursor.sh).
 
 [Getting Started](#-getting-started) •
 [Documentation](#-documentation) •
 [Contributing](#-contributing) •
+[Security](#-security) •
+[Support](#-support)
 
 </div>
 
@@ -98,6 +101,11 @@ See our [Contributing Guide](CONTRIBUTING.md) for details on:
 - [GitHub Issues](../../issues) for bug reports and feature requests
 - [GitHub Discussions](../../discussions) for questions and discussions
 - [Pull Requests](../../pulls) for contributions
+- [Security Policy](SECURITY.md) for vulnerability reporting
+
+## 🔒 Security
+
+We take the security of Cursor Rules seriously. If you believe you have found a security vulnerability, please read our [Security Policy](SECURITY.md) for reporting guidelines.
 
 ## 📄 License
 
