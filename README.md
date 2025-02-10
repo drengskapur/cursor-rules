@@ -12,7 +12,6 @@ A collection of standardized development rules and best practices for projects b
 [Documentation](#-documentation) •
 [Contributing](#-contributing) •
 [Security](#-security) •
-[Support](#-support)
 
 </div>
 
