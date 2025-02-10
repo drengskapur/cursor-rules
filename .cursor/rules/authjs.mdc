@@ -3,6 +3,166 @@ description: "Auth.js v5.0 authentication standards and configuration for Next.j
 globs: ["app/auth/**/*", "auth.ts", "auth.config.ts"]
 ---
 
+# Auth.js v5 Rules
+
+## File Patterns
+- `auth.ts` or `auth.config.ts` in root directory for main configuration
+- `app/api/auth/[...nextauth]/route.ts` for App Router API routes
+- `pages/api/auth/[...nextauth].ts` for Pages Router API routes
+- `middleware.ts` for authentication middleware
+- `app/(auth)/**/*.tsx` for authentication-related components
+- `types/auth.d.ts` for type declarations
+
+## Code Generation Rules
+
+### Configuration Setup
+```typescript
+// auth.config.ts - Edge-compatible config
+import type { NextAuthConfig } from "next-auth"
+import { providers } from "./auth.providers"
+
+export default {
+  providers,
+  callbacks: {
+    authorized({ auth, request: { nextUrl } }) {
+      const isLoggedIn = !!auth?.user
+      const isProtected = nextUrl.pathname.startsWith('/protected')
+      if (isProtected) return isLoggedIn
+      return true
+    }
+  }
+} satisfies NextAuthConfig
+
+// auth.ts - Full config with database
+import NextAuth from "next-auth"
+import { PrismaAdapter } from "@auth/prisma-adapter"
+import authConfig from "./auth.config"
+
+export const { auth, handlers, signIn, signOut } = NextAuth({
+  adapter: PrismaAdapter(prisma),
+  session: { strategy: "jwt" },
+  ...authConfig
+})
+```
+
+### API Route Handlers
+```typescript
+// App Router
+import { handlers } from "@/auth"
+export const { GET, POST } = handlers
+
+// Pages Router
+import { handlers } from "@/auth"
+export default handlers
+```
+
+## Development Patterns
+
+### Environment Variables
+- Prefix all variables with `AUTH_` instead of `NEXTAUTH_`
+- Required: `AUTH_SECRET` for session encryption
+- Optional: `AUTH_URL` for deployment URL (auto-detected in most cases)
+- Provider variables: `AUTH_<PROVIDER>_ID` and `AUTH_<PROVIDER>_SECRET`
+
+### Authentication Flow
+1. Configure providers in auth config
+2. Set up API routes for auth handlers
+3. Implement middleware for protected routes
+4. Use `auth()` for server-side authentication
+5. Use `useSession()` for client-side authentication
+
+### Session Management
+- Default to JWT strategy for Edge compatibility
+- Use database strategy when adapter is configured
+- Session maxAge defaults to 30 days
+- Session is automatically refreshed on auth() calls
+
+## Architecture Guidelines
+
+### Edge Compatibility
+- Split configuration into edge-compatible and full configs
+- Use JWT session strategy for edge environments
+- Avoid database operations in middleware
+- Use Web APIs for compatibility
+
+### Security Best Practices
+- Store secrets in environment variables
+- Use HTTPS in production
+- Implement CSRF protection
+- Enable secure cookies
+- Rate limit authentication endpoints
+
+### Database Integration
+- Use official adapters from @auth scope
+- Follow adapter schema requirements
+- Implement custom adapters using AdapterAccount interface
+- Handle OAuth account linking
+
+### Error Handling
+- Implement error pages for auth flows
+- Handle OAuth errors gracefully
+- Provide user feedback for auth failures
+- Log authentication errors securely
+
+## Common Anti-patterns
+- Avoid storing sensitive data in JWT payload
+- Don't use OAuth 1.0 (deprecated)
+- Don't mix session strategies
+- Avoid custom session handling
+- Don't store plain text secrets
+
+## Recommended Patterns
+
+### Protected API Routes
+```typescript
+import { auth } from "@/auth"
+
+export async function GET(request: Request) {
+  const session = await auth()
+  if (!session) return new Response("Unauthorized", { status: 401 })
+  // Protected route logic
+}
+```
+
+### Protected Pages
+```typescript
+import { auth } from "@/auth"
+
+export default async function ProtectedPage() {
+  const session = await auth()
+  if (!session) redirect("/api/auth/signin")
+  return <div>Protected content</div>
+}
+```
+
+### Custom Sign-in Page
+```typescript
+import { signIn } from "@/auth"
+
+export default function SignInPage() {
+  return (
+    <button onClick={() => signIn("github")}>
+      Sign in with GitHub
+    </button>
+  )
+}
+```
+
+## Migration Guidelines
+- Update package to next-auth@beta
+- Move config to root auth.ts file
+- Update adapter imports to @auth scope
+- Replace getServerSession with auth()
+- Update environment variable prefixes
+- Remove OAuth 1.0 support
+
+## Type Safety
+- Use NextAuthConfig type for configuration
+- Extend DefaultSession for custom session data
+- Use JWT type for token customization
+- Implement proper type guards
+- Maintain strict TypeScript checks
+
 # Auth.js Standards
 
 ## Configuration

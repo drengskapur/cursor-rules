@@ -1,9 +1,215 @@
 ---
 description: "Task v3.32 automation standards using Taskfile.yml for development operations"
-globs: ["Taskfile.yml", "tasks/**/*.yml"]
+globs: ["Taskfile.yml", "taskfile.yml", "Taskfile.yaml", "taskfile.yaml", "Taskfile.dist.yml", "taskfile.dist.yml", "Taskfile.dist.yaml", "taskfile.dist.yaml", "taskfiles/**/*.{yml,yaml}"]
 ---
 
 # Task Automation Standards
+
+## File Location Behavior
+- Task will search for Taskfiles in the current working directory
+- If not found, it will walk up the directory tree until it finds one (similar to git)
+- When running from a subdirectory, Task behaves as if run from the directory containing the Taskfile
+- Use `{{.USER_WORKING_DIR}}` to reference the original working directory
+
+## Global Taskfiles
+- Use `--global` or `-g` flag to look in home directory
+- Searches for `$HOME/{T,t}askfile.{yml,yaml}`
+- Global tasks run in `$HOME` by default
+- Use `{{.USER_WORKING_DIR}}` for running in the current directory
+
+## Reading from stdin
+- Use `-t -` or `--taskfile -` to read from stdin
+- Useful for dynamically generated Taskfiles
+- Example: `task -t - <(cat ./Taskfile.yml)`
+- Or: `cat ./Taskfile.yml | task -t -`
+
+## Task Execution Order
+
+### Dependencies (Parallel Execution)
+- Dependencies listed in `deps` ALWAYS run in parallel for better performance
+- Dependencies should NOT depend on each other as execution order is not guaranteed
+- Use `task:` in `cmds` for sequential execution of tasks
+- Use `--parallel` flag to run CLI tasks in parallel (e.g., `task --parallel test:unit test:e2e`)
+
+### Deferred Execution
+- `defer` schedules commands/tasks to run at the end of the current task
+- Deferred commands run even if the task fails (great for cleanup)
+- Multiple defers run in REVERSE order (LIFO - Last In, First Out)
+- Special variable `{{.EXIT_CODE}}` available in deferred commands
+
+```yaml
+# Basic cleanup example
+task:
+  work:
+    cmds:
+      - mkdir -p tmpdir/
+      - defer: rm -rf tmpdir/     # Runs even if next command fails
+      - echo "Working..." > tmpdir/file.txt
+
+# Multiple defers (LIFO order)
+task:
+  complex:
+    cmds:
+      - mkdir -p dir1/ dir2/
+      - defer: rm -rf dir1/       # Runs second
+      - defer: rm -rf dir2/       # Runs first
+      - echo "Working..."
+
+# Defer with task
+task:
+  main:
+    cmds:
+      - mkdir -p workdir/
+      - defer: { task: cleanup }  # Runs cleanup task at end
+      - echo "Working..."
+  
+  cleanup:
+    internal: true               # Hide from CLI
+    cmds:
+      - rm -rf workdir/
+
+# Error handling in defers
+task:
+  handle-errors:
+    cmds:
+      - defer: |
+          if [[ "{{.EXIT_CODE}}" != "" ]]; then
+            echo "Task failed with code {{.EXIT_CODE}}"
+            ./notify-team.sh
+          fi
+      - echo "Working..."
+      - exit 1  # Simulate failure
+```
+
+Best Practices:
+1. Always use defer for cleanup operations
+2. Keep deferred tasks focused and atomic
+3. Use internal tasks for reusable cleanup logic
+4. Handle errors in deferred commands when needed
+5. Remember LIFO order when using multiple defers
+6. Use task-based defers for complex cleanup operations
+
+## Task Attributes
+
+### Core Task Attributes
+```yaml
+task_name:
+  # Core execution
+  cmds: []Command                 # Shell commands to execute
+  deps: []Dependency             # Tasks to run in parallel before this task
+  
+  # Documentation
+  label: string                  # Override task name in output (supports variables)
+  desc: string                   # Short description for task --list
+  summary: string                # Long description for task --summary
+  aliases: []string              # Alternative names for the task
+  
+  # Execution control
+  dir: string                    # Working directory for task
+  prompt: []string               # Confirmation prompts before execution
+  platforms: []string            # OS/arch restrictions (e.g., windows/amd64)
+  internal: bool                 # Hide from CLI and --list
+  interactive: bool              # Mark as interactive command
+  silent: bool                   # Hide task output
+  ignore_error: bool            # Continue on errors
+  
+  # Up-to-date checking
+  sources: []string              # Source files to check
+  generates: []string            # Generated files to check
+  status: []string               # Commands to check if task should run
+  method: string                 # Up-to-date check method (checksum|timestamp|none)
+  
+  # Variables and environment
+  vars: map[string]Variable      # Task-specific variables
+  env: map[string]Variable       # Task-specific environment variables
+  dotenv: []string              # .env files to load
+  requires:                      # Required variables
+    vars: []string
+  
+  # Shell options
+  set: []string                 # Set shell options
+  shopt: []string               # Shell options
+  
+  # Execution behavior
+  run: string                   # Run behavior (always|once|when_changed)
+  prefix: string                # Output prefix for parallel tasks
+```
+
+### Command Attributes
+```yaml
+command_entry:
+  # Basic command
+  cmd: string                   # Shell command to execute
+  task: string                  # Task to execute (alternative to cmd)
+  
+  # Looping
+  for:                         # Loop execution
+    var: string                # Variable to loop over
+    split: string              # Split pattern
+    as: string                 # Iterator variable name
+  
+  # Control
+  silent: bool                 # Hide command output
+  ignore_error: bool          # Continue on errors
+  platforms: []string         # OS/arch restrictions
+  
+  # Variables
+  vars: map[string]Variable    # Variables for task execution
+  
+  # Deferred execution
+  defer:                      # Run at task end
+    task: string              # Task to defer
+    vars: map[string]Variable # Variables for deferred task
+    silent: bool              # Hide deferred output
+  
+  # Shell options
+  set: []string               # Set shell options
+  shopt: []string            # Shell options
+```
+
+### Dependency Attributes
+```yaml
+dependency_entry:
+  task: string                 # Task to execute
+  vars: map[string]Variable    # Variables to pass
+  silent: bool                # Hide dependency output
+```
+
+### Alternative Syntax Examples
+```yaml
+# Simple command
+task_name: echo "command"
+
+# Multiple commands
+task_name:
+  - echo "command1"
+  - echo "command2"
+
+# Single command with attributes
+task_name:
+  cmd: echo "command"
+
+# Precondition shorthand
+task_name:
+  precondition: test -f file.txt
+```
+
+### Up-to-date Methods
+- `checksum`: Compare file content checksums (default)
+- `timestamp`: Compare file modification times
+- `none`: Always run task
+
+### Run Behaviors
+- `always`: Run every time (default)
+- `once`: Run only once per session
+- `when_changed`: Run when variables change
+
+### Special Variables
+- `{{.TASK}}`: Current task name
+- `{{.USER_WORKING_DIR}}`: Original working directory
+- `{{.CHECKSUM}}`: Source files checksum
+- `{{.TIMESTAMP}}`: Source files timestamp
+- `{{.CLI_ARGS}}`: Command line arguments
 
 ## Configuration
 
@@ -222,4 +428,178 @@ test:
     cmds:
       - rm -rf coverage
       - rm -rf test-results
-``` 
+```
+
+# Task v3.32 Automation Rules
+
+## File Patterns
+- `Taskfile.yml` or `Taskfile.yaml` in root directory for main configuration
+- `taskfile.dist.yml` for distributable configuration
+- `.env` files for environment variables
+- `taskfiles/**/*.yml` for included task files
+
+## Code Generation Rules
+
+### Base Configuration
+```yaml
+version: '3'
+
+env:
+  ENV: development
+
+dotenv: ['.env', '{{.ENV}}/.env']
+
+tasks:
+  default:
+    desc: Default task description
+    cmds:
+      - echo "Default task"
+```
+
+### Task Structure
+```yaml
+tasks:
+  task-name:
+    desc: Task description
+    summary: |
+      Detailed task summary
+      Multiple lines supported
+    deps: [dependency1, dependency2]
+    vars:
+      VAR1: value1
+      VAR2:
+        sh: echo "dynamic-value"
+    env:
+      ENV_VAR: value
+    cmds:
+      - echo "Command 1"
+      - task: other-task
+    sources:
+      - src/**/*.ts
+    generates:
+      - dist/**/*.js
+```
+
+## Development Patterns
+
+### Task Organization
+- Group related tasks in separate files
+- Use includes for modularity
+- Leverage dependencies for task orchestration
+- Implement proper error handling
+
+### Environment Management
+- Use `.env` files for environment variables
+- Support multiple environments (dev, prod)
+- Handle secrets securely
+- Implement environment validation
+
+### Task Dependencies
+- Define clear task dependencies
+- Use parallel execution when possible
+- Handle dependency failures gracefully
+- Implement proper cleanup
+
+## Architecture Guidelines
+
+### File Structure
+```yaml
+project_structure:
+  - Taskfile.yml          # Main taskfile
+  - taskfiles/            # Included taskfiles
+    - build.yml          # Build tasks
+    - test.yml          # Test tasks
+    - deploy.yml        # Deploy tasks
+  - .env                 # Environment variables
+  - .env.example        # Example environment file
+```
+
+### Task Composition
+- Break down complex tasks into smaller ones
+- Use dependencies for task orchestration
+- Implement proper error handling
+- Use variables for configuration
+
+### Performance Optimization
+- Use checksums for task caching
+- Implement proper source/generate patterns
+- Leverage parallel execution
+- Optimize task dependencies
+
+## Common Anti-patterns
+- Avoid shell-specific commands
+- Don't mix environment concerns
+- Avoid hardcoded paths
+- Don't ignore task errors
+- Avoid unnecessary task dependencies
+
+## Recommended Patterns
+
+### Task Naming
+```yaml
+naming_conventions:
+  - Use descriptive task names
+  - Group related tasks with prefixes
+  - Use hyphens for multi-word tasks
+  - Keep names concise but clear
+```
+
+### Error Handling
+```yaml
+error_handling:
+  - Use proper exit codes
+  - Implement cleanup with defer
+  - Handle dependency failures
+  - Provide clear error messages
+```
+
+### Task Documentation
+```yaml
+documentation:
+  - Add task descriptions
+  - Provide detailed summaries
+  - Document dependencies
+  - Include usage examples
+```
+
+## Best Practices
+
+### Task Definition
+```yaml
+best_practices:
+  - One task per responsibility
+  - Clear dependency chain
+  - Proper error handling
+  - Consistent naming
+  - Good documentation
+```
+
+### Environment Variables
+```yaml
+environment:
+  - Use .env files
+  - Support multiple environments
+  - Secure sensitive data
+  - Validate required variables
+```
+
+### Performance
+```yaml
+performance:
+  - Use checksums
+  - Implement caching
+  - Parallel execution
+  - Optimize dependencies
+```
+
+## Migration Guidelines
+- Update to version 3 syntax
+- Use new task features
+- Implement proper error handling
+- Update task documentation
+
+## Type Safety
+- Use proper variable types
+- Validate input parameters
+- Handle type conversions
+- Implement proper checks 
