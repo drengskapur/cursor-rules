@@ -1065,4 +1065,279 @@ nextjs_practices:
     - Check dynamic routes
     - Test middleware
     - Validate redirects
+```
+
+## Documentation Guidelines
+
+### MDX Documentation
+```yaml
+mdx_setup:
+  configuration:
+    main:
+      stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|ts|tsx)']
+      addons: ['@storybook/addon-docs']
+  
+  plugins:
+    markdown:
+      - remark-gfm: GitHub Flavored Markdown support
+      - remark-slug: Heading anchors
+      - remark-toc: Table of contents
+```
+
+### Basic MDX Structure
+```tsx
+// Component.mdx
+import { Canvas, Meta, Story } from '@storybook/blocks';
+import * as ComponentStories from './Component.stories';
+
+<Meta of={ComponentStories} />
+
+# Component Name
+
+Component description and purpose.
+
+## Usage
+
+Basic usage example and guidelines.
+
+<Canvas of={ComponentStories.Default} />
+
+## Variants
+
+Different component variations and their use cases.
+
+<Story of={ComponentStories.Variant} />
+
+## API Reference
+
+Component props and methods documentation.
+
+## Guidelines
+
+Best practices and implementation guidelines.
+```
+
+### Autodocs Configuration
+```yaml
+autodocs:
+  setup:
+    main:
+      docs: {
+        autodocs: 'tag',
+        defaultName: 'Documentation',
+      }
+  
+  story_configuration:
+    meta:
+      tags: ['autodocs']
+      parameters: {
+        docs: {
+          description: {
+            component: 'Component description',
+          },
+        },
+      }
+```
+
+### Doc Blocks Usage
+```tsx
+// Advanced documentation with Doc Blocks
+import {
+  Canvas,
+  Meta,
+  Story,
+  ArgsTable,
+  Description,
+  Source,
+  ColorPalette,
+  ColorItem,
+  Typeset,
+} from '@storybook/blocks';
+
+<Meta of={ComponentStories} />
+
+# Component Documentation
+
+<Description of={ComponentStories} />
+
+## Interactive Example
+<Canvas of={ComponentStories.Default} />
+
+## Props
+<ArgsTable of={ComponentStories} />
+
+## Implementation
+<Source
+  language="tsx"
+  dark
+  code={`
+    const Component = ({ prop1, prop2 }) => (
+      // Implementation
+    );
+  `}
+/>
+
+## Design Tokens
+
+### Colors
+<ColorPalette>
+  <ColorItem
+    title="theme.color.primary"
+    subtitle="Primary color"
+    colors={{ Primary: '#0066FF' }}
+  />
+</ColorPalette>
+
+### Typography
+<Typeset
+  fontSizes={[12, 14, 16, 20, 24]}
+  fontWeight={500}
+  sampleText="Sample text"
+  fontFamily="Inter"
+/>
+```
+
+### Documentation Standards
+```yaml
+standards:
+  structure:
+    - Title and description
+    - Usage examples
+    - Props/API reference
+    - Design guidelines
+    - Implementation notes
+  
+  components:
+    - Interactive examples
+    - Variant demonstrations
+    - Edge cases
+    - Accessibility notes
+    - Performance considerations
+  
+  code_examples:
+    - Basic usage
+    - Common patterns
+    - Integration examples
+    - Error handling
+    - Testing examples
+```
+
+### Multi-Component Documentation
+```tsx
+// Page.mdx - Documenting multiple components
+import { Canvas, Meta, Story } from '@storybook/blocks';
+import * as HeaderStories from './Header.stories';
+import * as ContentStories from './Content.stories';
+import * as FooterStories from './Footer.stories';
+
+<Meta title="Pages/Layout" />
+
+# Page Layout
+
+Documentation for the page layout and its components.
+
+## Header
+<Canvas of={HeaderStories.Default} />
+
+## Content
+<Canvas of={ContentStories.Default} />
+
+## Footer
+<Canvas of={FooterStories.Default} />
+
+## Composition
+<Canvas of={PageStories.Default} />
+```
+
+### Documentation Organization
+```yaml
+organization:
+  structure:
+    pages:
+      - introduction.mdx: Getting started
+      - components/: Component documentation
+      - patterns/: Common patterns
+      - guides/: Implementation guides
+      - api/: API reference
+    
+  naming:
+    - Clear and consistent titles
+    - Logical grouping
+    - Semantic versioning
+    - Related components
+    
+  navigation:
+    - Logical hierarchy
+    - Clear categories
+    - Related links
+    - Version indicators
+```
+
+### Best Practices
+```yaml
+doc_practices:
+  content:
+    - Clear and concise writing
+    - Comprehensive examples
+    - Consistent formatting
+    - Regular updates
+    - Version compatibility
+  
+  structure:
+    - Logical organization
+    - Progressive disclosure
+    - Cross-references
+    - Search optimization
+    - Version control
+  
+  maintenance:
+    - Regular reviews
+    - Version updates
+    - Deprecation notices
+    - Migration guides
+    - Feedback integration
+```
+
+### Documentation Build
+```yaml
+build:
+  configuration:
+    docs:
+      - docsPage: true
+      - defaultName: 'Documentation'
+      - autodocs: 'tag'
+    
+  optimization:
+    - Minify output
+    - Optimize images
+    - Reduce bundle size
+    - Enable caching
+    
+  deployment:
+    - Static generation
+    - Versioning
+    - Search indexing
+    - Analytics integration
+```
+
+### Troubleshooting
+```yaml
+troubleshooting:
+  common_issues:
+    - MDX parsing errors
+    - Missing dependencies
+    - Build failures
+    - Style conflicts
+    
+  solutions:
+    - Verify MDX syntax
+    - Check dependencies
+    - Clear cache
+    - Update configs
+    
+  maintenance:
+    - Regular updates
+    - Dependency audits
+    - Performance monitoring
+    - User feedback
 ``` 
