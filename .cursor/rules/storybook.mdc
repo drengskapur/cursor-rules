@@ -571,4 +571,498 @@ workflow:
      - Design review
      - Accessibility review
      - Performance review
+```
+
+## Testing Guidelines
+
+### Test Setup
+```yaml
+setup:
+  dependencies:
+    - "@storybook/test": "latest"
+    - "@storybook/addon-interactions": "latest"
+    - "@storybook/addon-a11y": "latest"
+    - "@storybook/test-runner": "latest"
+    - "@storybook/addon-coverage": "latest"
+  
+  configuration:
+    main:
+      addons: 
+        - "@storybook/addon-interactions"
+        - "@storybook/addon-a11y"
+        - "@storybook/addon-coverage"
+    
+    package.json:
+      scripts:
+        - "test-storybook": "test-storybook"
+        - "test-storybook:ci": "test-storybook --maxWorkers=2"
+```
+
+### Component Testing
+```tsx
+// Component test example
+import { userEvent, within, expect } from '@storybook/test';
+
+export const LoginTest: Story = {
+  play: async ({ canvasElement, step }) => {
+    const canvas = within(canvasElement);
+
+    // Group related interactions
+    await step('Enter credentials', async () => {
+      await userEvent.type(canvas.getByTestId('email'), 'user@example.com');
+      await userEvent.type(canvas.getByTestId('password'), 'password123');
+    });
+
+    await step('Submit form', async () => {
+      await userEvent.click(canvas.getByRole('button'));
+    });
+
+    // Assert results
+    await expect(
+      canvas.getByText('Login successful')
+    ).toBeInTheDocument();
+  },
+};
+
+// Test with mocked modules
+import { mockApi } from './api.mock';
+
+export const MockedTest: Story = {
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await userEvent.click(canvas.getByRole('button'));
+    await expect(mockApi.submit).toHaveBeenCalled();
+  },
+};
+```
+
+### Visual Testing
+```yaml
+visual_testing:
+  tools:
+    - Chromatic: Automated visual testing
+    - Percy: Visual and DOM testing
+    - Loki: Visual regression testing
+    
+  workflow:
+    1. Baseline:
+       - Capture initial component state
+       - Document visual requirements
+       - Set up testing thresholds
+    
+    2. Changes:
+       - Automatically detect UI changes
+       - Review visual differences
+       - Update baselines when needed
+    
+    3. Regression:
+       - Compare across viewports
+       - Test different themes
+       - Verify responsive behavior
+
+  configuration:
+    package.json:
+      "chromatic": {
+        "projectToken": "project-token",
+        "buildScriptName": "build-storybook"
+      }
+```
+
+### Accessibility Testing
+```tsx
+// A11y test configuration
+const meta: Meta = {
+  component: Button,
+  parameters: {
+    a11y: {
+      config: {
+        rules: [
+          { id: 'color-contrast', enabled: true },
+          { id: 'heading-order', enabled: true },
+          { id: 'label', enabled: true },
+        ],
+      },
+    },
+  },
+};
+
+// A11y test example
+export const AccessibleButton: Story = {
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const button = canvas.getByRole('button');
+    
+    // Test keyboard navigation
+    await userEvent.tab();
+    await expect(button).toHaveFocus();
+    
+    // Test ARIA attributes
+    await expect(button).toHaveAttribute('aria-label');
+    
+    // Test color contrast
+    await expect(
+      await axeTest(canvasElement)
+    ).toHaveNoViolations();
+  },
+};
+```
+
+### Snapshot Testing
+```tsx
+// Snapshot test setup
+import initStoryshots from '@storybook/addon-storyshots';
+import { render } from '@testing-library/react';
+
+initStoryshots({
+  framework: 'react',
+  renderer: render,
+  snapshotSerializers: [
+    'jest-serializer-html',
+  ],
+});
+
+// Custom snapshot serializer
+const customSerializer = {
+  test: (val: any) => typeof val === 'string',
+  print: (val: string) => val.replace(/\s+/g, ' ').trim(),
+};
+```
+
+### Test Runner Configuration
+```yaml
+test_runner:
+  setup:
+    - Install: npm install @storybook/test-runner --save-dev
+    - Configure: Add test script to package.json
+    - CI: Set up CI/CD pipeline integration
+  
+  options:
+    - --maxWorkers: Limit concurrent tests
+    - --shard: Split tests across CI jobs
+    - --junit: Generate JUnit reports
+    - --coverage: Enable code coverage
+    
+  ci_workflow:
+    steps:
+      - Install dependencies
+      - Build Storybook
+      - Run tests with coverage
+      - Upload test reports
+      - Store artifacts
+```
+
+### Test Coverage
+```yaml
+coverage:
+  setup:
+    - "@storybook/addon-coverage"
+    - "istanbul"
+    - "nyc"
+  
+  configuration:
+    coverage:
+      extends: "@istanbuljs/nyc-config-typescript"
+      include:
+        - "src/**/*.{js,jsx,ts,tsx}"
+      exclude:
+        - "src/**/*.stories.{js,jsx,ts,tsx}"
+        - "src/**/*.test.{js,jsx,ts,tsx}"
+  
+  thresholds:
+    statements: 80
+    branches: 80
+    functions: 80
+    lines: 80
+```
+
+### Testing Best Practices
+```yaml
+best_practices:
+  component_tests:
+    - Test user interactions
+    - Group related steps
+    - Mock external dependencies
+    - Assert state changes
+    - Test error handling
+  
+  visual_tests:
+    - Test across viewports
+    - Include dark/light themes
+    - Test loading states
+    - Verify animations
+    - Check responsive behavior
+  
+  a11y_tests:
+    - Test keyboard navigation
+    - Verify ARIA attributes
+    - Check color contrast
+    - Test screen readers
+    - Validate heading structure
+  
+  snapshot_tests:
+    - Keep snapshots focused
+    - Review changes carefully
+    - Update intentionally
+    - Document changes
+    - Use custom serializers
+  
+  general:
+    - Write focused tests
+    - Use meaningful assertions
+    - Document test scenarios
+    - Maintain test hygiene
+    - Regular test reviews
+```
+
+### Continuous Integration
+```yaml
+ci_integration:
+  workflow:
+    setup:
+      - Cache dependencies
+      - Set up environment
+      - Configure test runner
+    
+    test:
+      - Run component tests
+      - Run visual tests
+      - Run a11y tests
+      - Generate coverage
+    
+    report:
+      - Upload test results
+      - Store artifacts
+      - Report coverage
+      - Notify team
+  
+  example:
+    name: Storybook Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v2
+      - run: npm ci
+      - run: npm run build-storybook
+      - run: npm run test-storybook:ci
+      - uses: actions/upload-artifact@v2
+        with:
+          name: storybook-test-results
+          path: junit.xml
+```
+
+## Next.js Integration
+
+### Framework Setup
+```yaml
+requirements:
+  nextjs: "≥ 13.5"
+  storybook: "≥ 7.0"
+  dependencies:
+    - "@storybook/nextjs": "latest"
+    - "@storybook/addon-interactions": "latest"
+    - "@storybook/test": "latest"
+
+configuration:
+  main:
+    framework: "@storybook/nextjs"
+    addons: [
+      "@storybook/addon-links",
+      "@storybook/addon-essentials",
+      "@storybook/addon-interactions",
+      "@storybook/addon-a11y"
+    ]
+```
+
+### Next.js Components Support
+```tsx
+// Image Component Usage
+import Image from 'next/image'
+
+// Local images
+export const LocalImage: Story = {
+  render: () => (
+    <Image
+      src={require('../public/image.png')}
+      alt="Description"
+      // width and height automatically provided
+      // blurDataURL set to equal the image itself
+      placeholder="blur"
+    />
+  ),
+}
+
+// Remote images
+export const RemoteImage: Story = {
+  render: () => (
+    <Image
+      src="https://example.com/image.png"
+      alt="Description"
+      width={500}
+      height={300}
+    />
+  ),
+}
+
+// Font Optimization
+import { Inter } from 'next/font/google'
+import localFont from 'next/font/local'
+
+const inter = Inter({ subsets: ['latin'] })
+const localSans = localFont({ src: './fonts/LocalSans.woff2' })
+```
+
+### Navigation and Routing
+```tsx
+// App Router Support
+export const meta: Meta = {
+  parameters: {
+    nextjs: {
+      appDirectory: true,
+      navigation: {
+        segments: ['dashboard', ['user', '123']],
+        pathname: '/dashboard/user/123',
+      },
+    },
+  },
+}
+
+// Router Mocking
+import { getRouter } from '@storybook/nextjs/router.mock'
+
+export const NavigationTest: Story = {
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const backButton = canvas.getByRole('button', { name: /back/i })
+    
+    await userEvent.click(backButton)
+    await expect(getRouter().back).toHaveBeenCalled()
+  },
+}
+```
+
+### API Mocking
+```tsx
+// API Route Mocking
+import { mockApi } from '@storybook/nextjs/api.mock'
+
+export const ApiTest: Story = {
+  parameters: {
+    nextjs: {
+      api: {
+        '/api/user': (req, res) => {
+          return res.json({ name: 'John Doe' })
+        },
+      },
+    },
+  },
+}
+
+// Headers and Cookies
+import { headers, cookies } from '@storybook/nextjs/headers.mock'
+
+export const AuthenticatedState: Story = {
+  parameters: {
+    nextjs: {
+      headers: () => {
+        headers().set('authorization', 'Bearer token')
+        cookies().set('user', 'john.doe')
+      },
+    },
+  },
+}
+```
+
+### Static Assets
+```yaml
+static_assets:
+  configuration:
+    main:
+      staticDirs: ['../public']
+      
+  structure:
+    public:
+      - images/
+      - fonts/
+      - icons/
+    
+  usage:
+    images: Use next/image component
+    fonts: Configure in preview.tsx
+    static: Direct import from public
+```
+
+### Environment Variables
+```yaml
+environment:
+  configuration:
+    env:
+      - NEXT_PUBLIC_*: Available in stories
+      - STORYBOOK_*: Storybook-specific
+    
+  setup:
+    .env.storybook:
+      NEXT_PUBLIC_API_URL=http://localhost:3000
+      STORYBOOK_THEME=light
+```
+
+### Performance Optimization
+```yaml
+optimization:
+  webpack:
+    - Enable SWC
+    - Optimize images
+    - Bundle analysis
+  
+  vite:
+    experimental: true
+    requirements: "Next.js ≥ 14.1.0"
+    setup:
+      framework: "@storybook/experimental-nextjs-vite"
+```
+
+### Testing Considerations
+```yaml
+testing:
+  setup:
+    - Configure test-runner
+    - Set up MSW for API mocking
+    - Enable coverage reporting
+  
+  patterns:
+    - Test App Router components
+    - Mock server components
+    - Test client components
+    - Verify data fetching
+    - Check routing behavior
+```
+
+### Best Practices
+```yaml
+nextjs_practices:
+  structure:
+    - Group stories by route
+    - Match Next.js file structure
+    - Separate server/client stories
+    - Document data requirements
+  
+  components:
+    - Test both SSR and CSR states
+    - Mock server components
+    - Handle loading states
+    - Test error boundaries
+    - Verify hydration
+  
+  data_fetching:
+    - Mock API responses
+    - Test loading states
+    - Handle error states
+    - Verify caching
+    - Test revalidation
+  
+  routing:
+    - Test navigation events
+    - Verify route parameters
+    - Check dynamic routes
+    - Test middleware
+    - Validate redirects
 ``` 
