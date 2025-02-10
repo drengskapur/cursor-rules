@@ -1,0 +1,225 @@
+---
+description: "Task v3.32 automation standards using Taskfile.yml for development operations"
+globs: ["Taskfile.yml", "tasks/**/*.yml"]
+---
+
+# Task Automation Standards
+
+## Configuration
+
+### Global Settings
+```yaml
+version: "3"
+
+output:
+  group:
+    begin: "::group::{{.TASK}}"
+    end: "::endgroup::"
+
+interval: 2s
+set: [pipefail]
+shopt: [globstar]
+
+env:
+  TASK_COLOR_BLUE: "94"
+  TASK_COLOR_GREEN: "92"
+  TASK_COLOR_RED: "91"
+  TASK_COLOR_YELLOW: "93"
+  FORCE_COLOR: "1"
+
+vars:
+  TEST_ARGS: "--reporter=verbose"
+```
+
+## Task Categories
+
+### Development Tasks
+```yaml
+development_tasks:
+  default:
+    desc: "Start development server"
+    deps: [install-bun, clean]
+    cmds:
+      - bunx vercel dev
+
+  build:
+    desc: "Build the project"
+    deps: [install-bun, clean]
+    cmds:
+      - bun run build
+    sources:
+      - "app/**/*.{ts,tsx}"
+      - "components/**/*.{ts,tsx}"
+    generates:
+      - ".next/**/*"
+```
+
+### Testing Tasks
+```yaml
+test_tasks:
+  test:all:
+    desc: "Run all tests"
+    deps: [test:setup]
+    cmds:
+      - task: test:unit
+      - task: test:integration
+      - task: test:e2e
+
+  test:unit:
+    desc: "Run unit tests"
+    cmds:
+      - bunx vitest run --config ./vitest.unit.config.ts
+
+  test:e2e:
+    desc: "Run end-to-end tests"
+    env:
+      PLAYWRIGHT_TEST_BASE_URL: "http://localhost:3000"
+    cmds:
+      - bunx playwright test
+```
+
+### Database Tasks
+```yaml
+database_tasks:
+  migrate:init:
+    cmds:
+      - bun scripts/migrate.ts migrations/001_init.sql
+
+  migrate:all:
+    cmds:
+      - task: migrate:init
+      - task: migrate:questions
+```
+
+### Utility Tasks
+```yaml
+utility_tasks:
+  clean:
+    desc: "Clean up artifacts"
+    cmds:
+      - find . -type d -name "debug" -exec rm -rf {} +
+      - find . -type f -name "*.log" -delete
+
+  generate-token:
+    desc: "Generate security token"
+    cmds:
+      - openssl rand -base64 {{default "32" .length}}
+```
+
+## Task Structure
+
+### Task Definition Pattern
+```yaml
+task_pattern:
+  name:
+    desc: "Task description"
+    deps: [dependency1, dependency2]
+    vars:
+      VAR1: "value1"
+    env:
+      ENV1: "value1"
+    cmds:
+      - command1
+      - command2
+    sources:
+      - "source/pattern/*"
+    generates:
+      - "output/pattern/*"
+```
+
+### Task Dependencies
+```yaml
+dependency_types:
+  - task: Other tasks
+  - file: File existence
+  - env: Environment variables
+  - custom: Custom conditions
+```
+
+## Best Practices
+
+### Task Organization
+```yaml
+organization:
+  - Group related tasks
+  - Use clear naming
+  - Document dependencies
+  - Specify descriptions
+  - Include error handling
+```
+
+### Performance
+```yaml
+performance:
+  - Cache task results
+  - Use incremental builds
+  - Parallelize when possible
+  - Minimize dependencies
+  - Optimize file watching
+```
+
+### Reliability
+```yaml
+reliability:
+  - Handle errors gracefully
+  - Provide cleanup methods
+  - Use status checks
+  - Validate inputs
+  - Log important info
+```
+
+### CI Integration
+```yaml
+ci_integration:
+  - Define CI-specific tasks
+  - Set appropriate timeouts
+  - Handle environment differences
+  - Provide proper logging
+  - Cache build artifacts
+```
+
+## Common Patterns
+
+### Installation Tasks
+```yaml
+install:
+  install-bun:
+    desc: "Install Bun"
+    status:
+      - command -v bun
+    cmds:
+      - curl -fsSL https://bun.sh/install | bash
+```
+
+### Build Tasks
+```yaml
+build:
+  build:prod:
+    desc: "Production build"
+    cmds:
+      - bun run build
+    generates:
+      - .next/**/*
+
+  build:dev:
+    desc: "Development build"
+    cmds:
+      - bun run dev
+```
+
+### Test Tasks
+```yaml
+test:
+  test:setup:
+    desc: "Setup test environment"
+    cmds:
+      - task: test:clean
+      - mkdir -p coverage
+      - mkdir -p test-results
+
+  test:clean:
+    desc: "Clean test artifacts"
+    cmds:
+      - rm -rf coverage
+      - rm -rf test-results
+``` 
