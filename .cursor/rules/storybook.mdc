@@ -1,6 +1,6 @@
 ---
 description: "Storybook v7.6 component development and documentation standards"
-globs: ["**/*.stories.tsx", ".storybook/**/*"]
+globs: ["**/*.stories.{ts,tsx}", "**/*.mdx", ".storybook/**/*"]
 ---
 
 # Storybook Standards
@@ -47,155 +47,260 @@ const config: StorybookConfig = {
 export default config;
 ```
 
-## Story Standards
-
-### Component Story Format
+## Story File Structure
 ```tsx
-// Button.stories.tsx
-import type { Meta, StoryObj } from '@storybook/react';
-import { Button } from './Button';
+// Component story file structure
+import type { Meta, StoryObj } from '@storybook/react'
+import { ComponentName } from './ComponentName'
 
 const meta = {
-  title: 'Components/Button',
-  component: Button,
+  title: 'Category/ComponentName',
+  component: ComponentName,
+  tags: ['autodocs'],
   parameters: {
     layout: 'centered',
   },
-  tags: ['autodocs'],
-} satisfies Meta<typeof Button>;
+} satisfies Meta<typeof ComponentName>
 
-export default meta;
-type Story = StoryObj<typeof meta>;
+export default meta
+type Story = StoryObj<typeof meta>
 
-export const Primary: Story = {
+// Base story with default props
+export const Default: Story = {
   args: {
-    variant: 'primary',
-    children: 'Button',
+    // Default props
   },
-};
+}
+
+// Variants with different props
+export const Variant: Story = {
+  args: {
+    // Variant-specific props
+  },
+}
 ```
 
-### Story Organization
+## Story Organization
+
+### Component Categories
 ```yaml
-story_structure:
-  components:
-    - One story file per component
-    - Logical grouping in folders
-    - Clear naming conventions
-    
-  documentation:
-    - Component description
-    - Usage examples
-    - Props documentation
-    - Design guidelines
-    
+categories:
+  atoms:        # Basic building blocks
+    - Button
+    - Input
+    - Icon
+  molecules:    # Combinations of atoms
+    - SearchBar
+    - Card
+  organisms:    # Complex components
+    - Header
+    - Footer
+  templates:    # Page layouts
+    - DashboardLayout
+    - AuthLayout
+  pages:        # Full pages
+    - HomePage
+    - ProfilePage
+```
+
+### Naming Conventions
+```yaml
+naming:
+  files: "{ComponentName}.stories.tsx"
+  title: "Category/ComponentName"
   variants:
-    - Default state
-    - Interactive states
-    - Edge cases
-    - Error states
+    - Default     # Base component
+    - Primary     # Main variant
+    - Secondary   # Alternative variant
+    - Disabled    # State variant
+    - Loading     # State variant
+    - Error       # State variant
+    - Sizes       # Size variants
+    - Themes      # Theme variants
 ```
 
-## Integration Standards
+## Story Best Practices
 
-### Next.js Integration
-```yaml
-nextjs_features:
-  routing:
-    - Mock Next.js router
-    - Handle navigation
-    - Dynamic routes
-    
-  components:
-    - Image component
-    - Link component
-    - Server components
-    - Client components
-```
-
-### Styling Integration
-```yaml
-styling_support:
-  tailwind:
-    - Theme configuration
-    - Dark mode support
-    - Custom classes
-    
-  css_modules:
-    - Style isolation
-    - Global styles
-    - CSS variables
-```
-
-## Testing Standards
-
-### Interaction Testing
+### Component Documentation
 ```tsx
-// Button.stories.tsx
-import { expect } from '@storybook/jest';
-import { within, userEvent } from '@storybook/testing-library';
-
-export const ClickTest: Story = {
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
-    const button = canvas.getByRole('button');
-    await userEvent.click(button);
-    await expect(button).toHaveClass('clicked');
+// Component story with documentation
+const meta = {
+  title: 'Components/Button',
+  component: Button,
+  tags: ['autodocs'],
+  parameters: {
+    componentSubtitle: 'Interactive button component',
+    docs: {
+      description: {
+        component: 'A versatile button component that supports multiple variants and states.',
+      },
+    },
   },
-};
+  argTypes: {
+    variant: {
+      description: 'The visual style of the button',
+      control: 'select',
+      options: ['primary', 'secondary', 'ghost'],
+      table: {
+        type: { summary: 'string' },
+        defaultValue: { summary: 'primary' },
+      },
+    },
+    size: {
+      description: 'The size of the button',
+      control: 'radio',
+      options: ['sm', 'md', 'lg'],
+    },
+    disabled: {
+      description: 'Whether the button is disabled',
+      control: 'boolean',
+    },
+  },
+} satisfies Meta<typeof Button>
+```
+
+### Interactive Examples
+```tsx
+// Story with actions and controls
+export const Interactive: Story = {
+  args: {
+    children: 'Click Me',
+    onClick: action('clicked'),
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: 'An interactive example of the button component.',
+      },
+    },
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const button = canvas.getByRole('button')
+    await userEvent.click(button)
+  },
+}
+```
+
+### State Management
+```tsx
+// Story with state management
+export const WithState: Story = {
+  render: function Render(args) {
+    const [count, setCount] = useState(0)
+    return (
+      <Button {...args} onClick={() => setCount(count + 1)}>
+        Count: {count}
+      </Button>
+    )
+  },
+}
+```
+
+## Testing Integration
+
+### Component Testing
+```tsx
+// Story with testing
+export const TestCase: Story = {
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const button = canvas.getByRole('button')
+    
+    // Accessibility tests
+    await expect(button).toHaveAttribute('aria-label')
+    
+    // Interaction tests
+    await userEvent.click(button)
+    await expect(button).toHaveClass('active')
+    
+    // State tests
+    await userEvent.hover(button)
+    await expect(button).toHaveStyle({ opacity: '0.8' })
+  },
+}
 ```
 
 ### Accessibility Testing
-```yaml
-a11y_standards:
-  - WCAG compliance
-  - Color contrast
-  - Keyboard navigation
-  - Screen reader support
-  - Focus management
+```tsx
+// Story with a11y testing
+const meta = {
+  parameters: {
+    a11y: {
+      config: {
+        rules: [
+          { id: 'color-contrast', enabled: true },
+          { id: 'label', enabled: true },
+        ],
+      },
+    },
+  },
+}
+```
+
+## Composition Patterns
+
+### Compound Components
+```tsx
+// Story for compound components
+export const CompoundExample: Story = {
+  render: () => (
+    <Select>
+      <Select.Trigger>Choose option</Select.Trigger>
+      <Select.Content>
+        <Select.Item value="1">Option 1</Select.Item>
+        <Select.Item value="2">Option 2</Select.Item>
+      </Select.Content>
+    </Select>
+  ),
+}
+```
+
+### Context Integration
+```tsx
+// Story with context providers
+export const WithContext: Story = {
+  decorators: [
+    (Story) => (
+      <ThemeProvider theme="light">
+        <Story />
+      </ThemeProvider>
+    ),
+  ],
+}
 ```
 
 ## Best Practices
 
-### Documentation
-```yaml
-documentation_standards:
-  - Clear component descriptions
-  - Usage examples
-  - Props documentation
-  - Design guidelines
-  - Accessibility notes
-```
+1. Documentation:
+   - Write clear component descriptions
+   - Document all props with types and defaults
+   - Include usage examples
+   - Add accessibility guidelines
 
-### Performance
-```yaml
-performance_guidelines:
-  - Lazy loading
-  - Asset optimization
-  - Bundle size monitoring
-  - Code splitting
-  - Cache management
-```
+2. Organization:
+   - Group related components
+   - Use consistent naming
+   - Maintain story hierarchy
+   - Include relevant tags
 
-### Development
-```yaml
-development_practices:
-  - Component isolation
-  - Reusable stories
-  - Visual testing
-  - Interactive docs
-  - Live editing
-```
+3. Testing:
+   - Include interaction tests
+   - Test accessibility
+   - Test responsive behavior
+   - Test edge cases
 
-### Deployment
-```yaml
-deployment_standards:
-  - Static builds
-  - Version control
-  - CI/CD integration
-  - Environment config
-  - Access control
-```
+4. Composition:
+   - Show component composition
+   - Demonstrate context usage
+   - Include state management
+   - Show integration patterns
+
+5. Maintenance:
+   - Keep stories up to date
+   - Remove unused stories
+   - Update documentation
+   - Test regularly
 
 ## Common Patterns
 
@@ -258,4 +363,212 @@ export async function clickButton(canvasElement: HTMLElement) {
   await userEvent.click(button);
   return button;
 }
+```
+
+## Component Development Methodology
+
+### Component-Driven Development (CDD)
+```yaml
+principles:
+  - Build UI from bottom up
+  - Start with atomic components
+  - Progress to composite components
+  - End with full screens
+  - Test in isolation
+  - Document variations
+
+development_flow:
+  1_atomic:
+    - Build basic components
+    - Document states/variants
+    - Test in isolation
+  2_composite:
+    - Combine basic components
+    - Handle data flow
+    - Test interactions
+  3_screens:
+    - Assemble full screens
+    - Integrate with data
+    - Test user flows
+```
+
+### Component States
+```tsx
+// Document all possible states
+export const states = {
+  default: 'Base component state',
+  loading: 'Loading/skeleton state',
+  error: 'Error state handling',
+  empty: 'Empty/no data state',
+  disabled: 'Disabled/inactive state',
+  interactive: 'Interactive/hover/focus states',
+  variations: 'Size/color/theme variations',
+}
+
+// Example implementation
+export const ComponentStates: Story = {
+  render: () => (
+    <div className="states-wrapper">
+      <Component {...Default.args} />
+      <Component {...Loading.args} />
+      <Component {...Error.args} />
+      <Component {...Empty.args} />
+    </div>
+  ),
+}
+```
+
+### Data Requirements
+```tsx
+// Define clear prop types
+import PropTypes from 'prop-types'
+
+ComponentName.propTypes = {
+  /** Primary content */
+  children: PropTypes.node.isRequired,
+  /** Component visual style */
+  variant: PropTypes.oneOf(['primary', 'secondary']),
+  /** Loading state */
+  isLoading: PropTypes.bool,
+  /** Error state */
+  error: PropTypes.shape({
+    message: PropTypes.string,
+  }),
+  /** Click handler */
+  onClick: PropTypes.func,
+}
+
+// TypeScript alternative
+interface ComponentProps {
+  /** Primary content */
+  children: React.ReactNode;
+  /** Component visual style */
+  variant?: 'primary' | 'secondary';
+  /** Loading state */
+  isLoading?: boolean;
+  /** Error state */
+  error?: {
+    message: string;
+  };
+  /** Click handler */
+  onClick?: () => void;
+}
+```
+
+### Testing Strategy
+```yaml
+testing_levels:
+  visual:
+    - Component appearance
+    - Visual regression
+    - Responsive behavior
+    - Theme variations
+  
+  interaction:
+    - User actions
+    - State changes
+    - Event handlers
+    - Keyboard navigation
+  
+  accessibility:
+    - WCAG compliance
+    - Screen reader
+    - Keyboard usage
+    - Color contrast
+  
+  integration:
+    - Data flow
+    - Context usage
+    - Side effects
+    - Error boundaries
+```
+
+### Story Organization
+```tsx
+// Stories follow component complexity
+stories:
+  atoms: {
+    Button: {
+      states: ['default', 'hover', 'pressed', 'disabled'],
+      variants: ['primary', 'secondary', 'ghost'],
+    },
+    Input: {
+      states: ['default', 'focus', 'error', 'disabled'],
+      variants: ['text', 'number', 'password'],
+    },
+  },
+  molecules: {
+    Form: {
+      composition: ['Input', 'Button'],
+      states: ['default', 'loading', 'success', 'error'],
+    },
+    Card: {
+      composition: ['Image', 'Text', 'Button'],
+      states: ['default', 'loading', 'expanded'],
+    },
+  },
+  organisms: {
+    Header: {
+      composition: ['Logo', 'Navigation', 'Search', 'Profile'],
+      states: ['default', 'authenticated', 'mobile'],
+    },
+  },
+```
+
+### Documentation Standards
+```yaml
+documentation:
+  component:
+    - Purpose and usage
+    - Props/API reference
+    - Examples and code snippets
+    - Accessibility considerations
+    - Performance notes
+  
+  story:
+    - State description
+    - Interaction guide
+    - Technical notes
+    - Edge cases
+    - Known limitations
+  
+  integration:
+    - Context requirements
+    - Data dependencies
+    - Event handling
+    - State management
+```
+
+### Development Workflow
+```yaml
+workflow:
+  1. Component Planning:
+     - Define requirements
+     - Identify states
+     - Plan composition
+     - Document API
+
+  2. Implementation:
+     - Build base component
+     - Add variants
+     - Implement states
+     - Handle interactions
+
+  3. Testing:
+     - Visual tests
+     - Interaction tests
+     - A11y tests
+     - Integration tests
+
+  4. Documentation:
+     - Write stories
+     - Add descriptions
+     - Include examples
+     - Document edge cases
+
+  5. Review & Iterate:
+     - Peer review
+     - Design review
+     - Accessibility review
+     - Performance review
 ``` 
