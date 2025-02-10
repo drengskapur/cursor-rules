@@ -1,0 +1,261 @@
+---
+description: "Storybook v7.6 component development and documentation standards"
+globs: ["**/*.stories.tsx", ".storybook/**/*"]
+---
+
+# Storybook Standards
+
+## Configuration
+
+### Base Setup
+```yaml
+requirements:
+  version: "^7.6.0"
+  dependencies:
+    - "@storybook/react"
+    - "@storybook/addon-essentials"
+    - "@storybook/addon-interactions"
+    - "@storybook/addon-a11y"
+  files:
+    - .storybook/main.ts
+    - .storybook/preview.tsx
+    - .storybook/theme.ts
+```
+
+### Project Configuration
+```ts
+// .storybook/main.ts
+import type { StorybookConfig } from '@storybook/nextjs';
+
+const config: StorybookConfig = {
+  stories: ['../**/*.mdx', '../**/*.stories.@(js|jsx|mjs|ts|tsx)'],
+  addons: [
+    '@storybook/addon-links',
+    '@storybook/addon-essentials',
+    '@storybook/addon-interactions',
+    '@storybook/addon-a11y',
+  ],
+  framework: {
+    name: '@storybook/nextjs',
+    options: {},
+  },
+  docs: {
+    autodocs: 'tag',
+  },
+};
+
+export default config;
+```
+
+## Story Standards
+
+### Component Story Format
+```tsx
+// Button.stories.tsx
+import type { Meta, StoryObj } from '@storybook/react';
+import { Button } from './Button';
+
+const meta = {
+  title: 'Components/Button',
+  component: Button,
+  parameters: {
+    layout: 'centered',
+  },
+  tags: ['autodocs'],
+} satisfies Meta<typeof Button>;
+
+export default meta;
+type Story = StoryObj<typeof meta>;
+
+export const Primary: Story = {
+  args: {
+    variant: 'primary',
+    children: 'Button',
+  },
+};
+```
+
+### Story Organization
+```yaml
+story_structure:
+  components:
+    - One story file per component
+    - Logical grouping in folders
+    - Clear naming conventions
+    
+  documentation:
+    - Component description
+    - Usage examples
+    - Props documentation
+    - Design guidelines
+    
+  variants:
+    - Default state
+    - Interactive states
+    - Edge cases
+    - Error states
+```
+
+## Integration Standards
+
+### Next.js Integration
+```yaml
+nextjs_features:
+  routing:
+    - Mock Next.js router
+    - Handle navigation
+    - Dynamic routes
+    
+  components:
+    - Image component
+    - Link component
+    - Server components
+    - Client components
+```
+
+### Styling Integration
+```yaml
+styling_support:
+  tailwind:
+    - Theme configuration
+    - Dark mode support
+    - Custom classes
+    
+  css_modules:
+    - Style isolation
+    - Global styles
+    - CSS variables
+```
+
+## Testing Standards
+
+### Interaction Testing
+```tsx
+// Button.stories.tsx
+import { expect } from '@storybook/jest';
+import { within, userEvent } from '@storybook/testing-library';
+
+export const ClickTest: Story = {
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const button = canvas.getByRole('button');
+    await userEvent.click(button);
+    await expect(button).toHaveClass('clicked');
+  },
+};
+```
+
+### Accessibility Testing
+```yaml
+a11y_standards:
+  - WCAG compliance
+  - Color contrast
+  - Keyboard navigation
+  - Screen reader support
+  - Focus management
+```
+
+## Best Practices
+
+### Documentation
+```yaml
+documentation_standards:
+  - Clear component descriptions
+  - Usage examples
+  - Props documentation
+  - Design guidelines
+  - Accessibility notes
+```
+
+### Performance
+```yaml
+performance_guidelines:
+  - Lazy loading
+  - Asset optimization
+  - Bundle size monitoring
+  - Code splitting
+  - Cache management
+```
+
+### Development
+```yaml
+development_practices:
+  - Component isolation
+  - Reusable stories
+  - Visual testing
+  - Interactive docs
+  - Live editing
+```
+
+### Deployment
+```yaml
+deployment_standards:
+  - Static builds
+  - Version control
+  - CI/CD integration
+  - Environment config
+  - Access control
+```
+
+## Common Patterns
+
+### Preview Configuration
+```tsx
+// .storybook/preview.tsx
+import type { Preview } from '@storybook/react';
+import { withThemeByClassName } from '@storybook/addon-themes';
+import '../app/globals.css';
+
+const preview: Preview = {
+  parameters: {
+    actions: { argTypesRegex: '^on[A-Z].*' },
+    controls: {
+      matchers: {
+        color: /(background|color)$/i,
+        date: /Date$/,
+      },
+    },
+  },
+  decorators: [
+    withThemeByClassName({
+      themes: {
+        light: 'light',
+        dark: 'dark',
+      },
+      defaultTheme: 'light',
+    }),
+  ],
+};
+
+export default preview;
+```
+
+### Theme Configuration
+```ts
+// .storybook/theme.ts
+import { create } from '@storybook/theming/create';
+
+export default create({
+  base: 'light',
+  brandTitle: 'My Design System',
+  brandUrl: 'https://example.com',
+  brandImage: '/logo.svg',
+  brandTarget: '_self',
+});
+```
+
+### Testing Utilities
+```ts
+// .storybook/test-utils.ts
+import { within, userEvent } from '@storybook/testing-library';
+
+export const sleep = (ms: number) => 
+  new Promise((resolve) => setTimeout(resolve, ms));
+
+export async function clickButton(canvasElement: HTMLElement) {
+  const canvas = within(canvasElement);
+  const button = canvas.getByRole('button');
+  await userEvent.click(button);
+  return button;
+}
+``` 

@@ -1,0 +1,179 @@
+---
+description: "Auth.js v5.0 authentication standards and configuration for Next.js"
+globs: ["app/auth/**/*", "auth.ts", "auth.config.ts"]
+---
+
+# Auth.js Standards
+
+## Configuration
+
+### Base Setup
+```yaml
+requirements:
+  version: "^5.0.0"
+  dependencies:
+    - "@auth/core"
+    - "next-auth"
+  files:
+    - auth.ts: Core configuration
+    - auth.config.ts: Auth options
+    - middleware.ts: Edge middleware
+```
+
+### Project Configuration
+```ts
+// auth.config.ts
+import type { NextAuthConfig } from 'next-auth';
+
+export const authConfig: NextAuthConfig = {
+  pages: {
+    signIn: '/login',
+    error: '/error',
+  },
+  callbacks: {
+    authorized({ auth, request: { nextUrl } }) {
+      const isLoggedIn = !!auth?.user;
+      const isProtected = nextUrl.pathname.startsWith('/protected');
+      if (isProtected) return isLoggedIn;
+      return true;
+    },
+  },
+  providers: [], // Configure in auth.ts
+};
+```
+
+## Implementation Standards
+
+### Authentication Setup
+```yaml
+auth_patterns:
+  session:
+    - JWT strategy
+    - Secure cookies
+    - CSRF protection
+    
+  middleware:
+    - Route protection
+    - Role-based access
+    - API protection
+    
+  providers:
+    - OAuth providers
+    - Credentials
+    - Email/Password
+```
+
+### Security Practices
+```yaml
+security:
+  session:
+    - Secure session handling
+    - Token rotation
+    - Expiration policies
+    
+  storage:
+    - Encrypted tokens
+    - Secure cookie usage
+    - Database security
+    
+  validation:
+    - Input sanitization
+    - CSRF prevention
+    - Rate limiting
+```
+
+## Integration Patterns
+
+### Route Protection
+```ts
+// middleware.ts
+import { auth } from './auth';
+ 
+export default auth((req) => {
+  const isLoggedIn = !!req.auth;
+  const isProtectedRoute = req.nextUrl.pathname.startsWith('/protected');
+  
+  if (isProtectedRoute && !isLoggedIn) {
+    return Response.redirect(new URL('/login', req.nextUrl));
+  }
+  return null;
+});
+
+export const config = {
+  matcher: ['/((?!api|_next/static|_next/image|favicon.ico).*)'],
+};
+```
+
+### Client Components
+```tsx
+// components/auth/LoginButton.tsx
+'use client';
+
+import { signIn } from 'next-auth/react';
+
+export function LoginButton() {
+  return (
+    <button onClick={() => signIn('github')}>
+      Sign in with GitHub
+    </button>
+  );
+}
+```
+
+### Server Components
+```tsx
+// components/auth/Profile.tsx
+import { auth } from '@/auth';
+
+export async function Profile() {
+  const session = await auth();
+  
+  if (!session?.user) {
+    return <div>Please log in</div>;
+  }
+  
+  return <div>Welcome {session.user.name}</div>;
+}
+```
+
+## Best Practices
+
+### Error Handling
+```yaml
+error_handling:
+  - Custom error pages
+  - Graceful fallbacks
+  - User feedback
+  - Error logging
+  - Recovery flows
+```
+
+### Performance
+```yaml
+performance:
+  - Minimal JWT payload
+  - Efficient session checks
+  - Caching strategies
+  - Edge middleware
+  - Lazy loading
+```
+
+### Development
+```yaml
+development:
+  - Environment setup
+  - Testing strategies
+  - Mocking auth
+  - Debug logging
+  - Local providers
+```
+
+### Deployment
+```yaml
+deployment:
+  - Environment variables
+  - Provider setup
+  - Database config
+  - SSL/TLS setup
+  - Monitoring
+``` 
