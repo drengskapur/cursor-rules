@@ -38,7 +38,7 @@ Cursor Rules is a community-driven collection of AI behavior rules that help tea
 1. Clone this repository into your project:
 
    ```bash
-   git clone https://github.com/drengskapur/.cursor.git 
+   git clone https://github.com/drengskapur/.cursor
    ```
 
 ## 📖 Documentation
