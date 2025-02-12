@@ -35,10 +35,10 @@ Cursor Rules is a community-driven collection of AI behavior rules that help tea
 
 ### Installation
 
-1. Clone this repository into your project:
+1. Add this repository to your project:
 
    ```bash
-   git clone https://github.com/drengskapur/.cursor
+   git submodule add https://github.com/drengskapur/.cursor
    ```
 
 ## 📖 Documentation
