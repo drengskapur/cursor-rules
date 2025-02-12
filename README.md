@@ -35,16 +35,10 @@ Cursor Rules is a community-driven collection of AI behavior rules that help tea
 
 ### Installation
 
-1. Create a `.cursor` directory in your project root:
+1. Clone this repository into your project:
 
    ```bash
-   mkdir .cursor
-   ```
-
-2. Clone this repository into your project:
-
-   ```bash
-   git clone https://github.com/yourusername/cursor-rules.git .cursor
+   git clone https://github.com/drengskapur/.cursor.git 
    ```
 
 ## 📖 Documentation
