@@ -8,6 +8,7 @@ globs: ["**/*.test.ts", "**/*.test.tsx", "vitest.config.ts"]
 ## Configuration
 
 ### Base Setup
+
 ```yaml
 requirements:
   version: "^3.0.5"
@@ -19,6 +20,7 @@ requirements:
 ```
 
 ### Project Configuration
+
 ```ts
 // vitest.config.ts
 import { defineConfig } from 'vitest/config';
@@ -48,23 +50,62 @@ export default defineConfig({
 ## Test Organization
 
 ### Directory Structure
+
 ```yaml
 test_structure:
+  components:
+    __tests__:
+      - Component unit tests
+      - Component integration tests
   tests:
     unit:
-      - Component unit tests
       - Utility function tests
+      - Helper tests
     integration:
-      - Component integration tests
-      - Feature tests
+      - Feature integration tests
+      - API integration tests
     browser:
       - Browser-specific tests
+    build:
+      - Build process tests
+      - Deployment tests
     setup:
       - Test configuration
       - Global mocks
+
+  naming_convention:
+    component_tests: "components/**/[name].test.{ts,tsx}"
+    unit_tests: "tests/unit/[name].test.ts"
+    integration_tests: "tests/integration/[name].test.ts"
+    browser_tests: "tests/browser/[name].browser.test.ts"
+    build_tests: "tests/[name].test.ts"
+```
+
+### Test Configuration
+
+```yaml
+configuration:
+  timeouts:
+    default: 5000
+    integration: 30000
+    browser: 60000
+    build: 120000
+    
+  environments:
+    component: "happy-dom"
+    integration: "node"
+    browser: "chrome"
+    build: "node"
+    
+  setup_files:
+    component: ["./tests/setup.ts"]
+    integration: []
+    browser: ["./tests/browser-setup.ts"]
+    build: []
 ```
 
 ### Test File Pattern
+
 ```ts
 // Component.test.tsx
 import { expect, test, describe, beforeEach } from 'vitest';
@@ -86,6 +127,7 @@ describe('Component', () => {
 ## Testing Standards
 
 ### Component Testing
+
 ```yaml
 test_types:
   rendering:
@@ -108,6 +150,7 @@ test_types:
 ```
 
 ### Mocking
+
 ```ts
 // Mock example
 vi.mock('next/navigation', () => ({
@@ -130,6 +173,7 @@ test('calls router.push', () => {
 ## Testing Utilities
 
 ### Custom Matchers
+
 ```ts
 // tests/matchers.ts
 import { expect } from 'vitest';
@@ -151,6 +195,7 @@ expect.extend({
 ```
 
 ### Test Helpers
+
 ```ts
 // tests/helpers.ts
 export function createMockUser(overrides = {}) {
@@ -174,6 +219,7 @@ export function mockApiResponse(data: any) {
 ## Best Practices
 
 ### Test Structure
+
 ```yaml
 test_guidelines:
   - Use descriptive test names
@@ -184,6 +230,7 @@ test_guidelines:
 ```
 
 ### Assertions
+
 ```yaml
 assertion_practices:
   - Use semantic queries
@@ -194,6 +241,7 @@ assertion_practices:
 ```
 
 ### Performance
+
 ```yaml
 performance_guidelines:
   - Mock heavy operations
@@ -204,6 +252,7 @@ performance_guidelines:
 ```
 
 ### Code Coverage
+
 ```yaml
 coverage_requirements:
   - Minimum 80% coverage
@@ -216,6 +265,7 @@ coverage_requirements:
 ## Common Patterns
 
 ### Setup Files
+
 ```ts
 // tests/setup.ts
 import '@testing-library/jest-dom';
@@ -232,6 +282,7 @@ afterEach(() => {
 ```
 
 ### Mock Implementations
+
 ```ts
 // tests/__mocks__/utils.ts
 import { vi } from 'vitest';
@@ -242,6 +293,7 @@ export const fetchData = vi.fn().mockResolvedValue({ data: [] });
 ```
 
 ### Test Fixtures
+
 ```ts
 // tests/fixtures.ts
 export const mockUser = {
@@ -254,4 +306,4 @@ export const mockPosts = [
   { id: 1, title: 'Post 1' },
   { id: 2, title: 'Post 2' },
 ];
-``` 
+```

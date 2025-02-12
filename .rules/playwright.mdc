@@ -8,6 +8,7 @@ globs: ["tests/e2e/**/*.spec.ts", "playwright.config.ts"]
 ## Configuration
 
 ### Base Setup
+
 ```yaml
 requirements:
   version: "^1.50.1"
@@ -19,6 +20,7 @@ requirements:
 ```
 
 ### Project Configuration
+
 ```ts
 // playwright.config.ts
 import { defineConfig, devices } from '@playwright/test';
@@ -60,6 +62,7 @@ export default defineConfig({
 ## Test Structure
 
 ### Test Organization
+
 ```yaml
 directory_structure:
   tests/e2e:
@@ -71,6 +74,7 @@ directory_structure:
 ```
 
 ### Test File Pattern
+
 ```ts
 // tests/e2e/auth/login.spec.ts
 import { test, expect } from '@playwright/test';
@@ -93,6 +97,7 @@ test.describe('Login Flow', () => {
 ## Testing Standards
 
 ### Page Object Pattern
+
 ```ts
 // tests/e2e/pages/login.page.ts
 export class LoginPage {
@@ -115,6 +120,7 @@ export class LoginPage {
 ```
 
 ### Test Fixtures
+
 ```ts
 // tests/e2e/fixtures.ts
 import { test as base } from '@playwright/test';
@@ -134,6 +140,7 @@ export const test = base.extend<Fixtures>({
 ## Testing Types
 
 ### Visual Testing
+
 ```yaml
 screenshot_types:
   - page: Full page snapshots
@@ -143,6 +150,7 @@ screenshot_types:
 ```
 
 ### Accessibility Testing
+
 ```yaml
 a11y_checks:
   - ARIA attributes
@@ -153,6 +161,7 @@ a11y_checks:
 ```
 
 ### Performance Testing
+
 ```yaml
 metrics:
   - Page load time
@@ -165,6 +174,7 @@ metrics:
 ## Best Practices
 
 ### Test Isolation
+
 ```yaml
 isolation_practices:
   - Reset state between tests
@@ -175,6 +185,7 @@ isolation_practices:
 ```
 
 ### Reliability
+
 ```yaml
 reliability_guidelines:
   - Use stable selectors
@@ -185,6 +196,7 @@ reliability_guidelines:
 ```
 
 ### Performance
+
 ```yaml
 performance_practices:
   - Parallelize tests
@@ -195,6 +207,7 @@ performance_practices:
 ```
 
 ### CI Integration
+
 ```yaml
 ci_setup:
   - Run in headless mode
@@ -202,4 +215,4 @@ ci_setup:
   - Set up reporting
   - Cache browser binaries
   - Parallelize execution
-``` 
+```

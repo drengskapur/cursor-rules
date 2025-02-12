@@ -8,6 +8,7 @@ globs: ["app/**/*", "pages/**/*", "components/**/*"]
 ## Core Features
 
 ### App Router
+
 ```yaml
 routing_patterns:
   - Use app directory for new routes
@@ -29,6 +30,7 @@ conventions:
 ```
 
 ### Data Fetching
+
 ```yaml
 patterns:
   server_components:
@@ -51,6 +53,7 @@ patterns:
 ```
 
 ### Rendering Patterns
+
 ```yaml
 strategies:
   static:
@@ -73,6 +76,7 @@ strategies:
 ## Best Practices
 
 ### Performance
+
 ```yaml
 optimizations:
   images:
@@ -95,6 +99,7 @@ optimizations:
 ```
 
 ### Security
+
 ```yaml
 guidelines:
   headers:
@@ -114,6 +119,7 @@ guidelines:
 ```
 
 ### Development
+
 ```yaml
 practices:
   structure:

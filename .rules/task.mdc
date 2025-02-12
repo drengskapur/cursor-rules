@@ -6,18 +6,21 @@ globs: ["Taskfile.yml", "taskfile.yml", "Taskfile.yaml", "taskfile.yaml", "Taskf
 # Task Automation Standards
 
 ## File Location Behavior
+
 - Task will search for Taskfiles in the current working directory
 - If not found, it will walk up the directory tree until it finds one (similar to git)
 - When running from a subdirectory, Task behaves as if run from the directory containing the Taskfile
 - Use `{{.USER_WORKING_DIR}}` to reference the original working directory
 
 ## Global Taskfiles
+
 - Use `--global` or `-g` flag to look in home directory
 - Searches for `$HOME/{T,t}askfile.{yml,yaml}`
 - Global tasks run in `$HOME` by default
 - Use `{{.USER_WORKING_DIR}}` for running in the current directory
 
 ## Reading from stdin
+
 - Use `-t -` or `--taskfile -` to read from stdin
 - Useful for dynamically generated Taskfiles
 - Example: `task -t - <(cat ./Taskfile.yml)`
@@ -26,72 +29,102 @@ globs: ["Taskfile.yml", "taskfile.yml", "Taskfile.yaml", "taskfile.yaml", "Taskf
 ## Task Execution Order
 
 ### Dependencies (Parallel Execution)
+
 - Dependencies listed in `deps` ALWAYS run in parallel for better performance
 - Dependencies should NOT depend on each other as execution order is not guaranteed
 - Use `task:` in `cmds` for sequential execution of tasks
 - Use `--parallel` flag to run CLI tasks in parallel (e.g., `task --parallel test:unit test:e2e`)
 
 ### Deferred Execution
+
 - `defer` schedules commands/tasks to run at the end of the current task
 - Deferred commands run even if the task fails (great for cleanup)
 - Multiple defers run in REVERSE order (LIFO - Last In, First Out)
 - Special variable `{{.EXIT_CODE}}` available in deferred commands
 
+## Task Categories
+
+### Development Tasks
+
 ```yaml
-# Basic cleanup example
-task:
-  work:
+development_tasks:
+  default:
+    desc: "Start development server"
+    deps: [install-bun, clean]
     cmds:
-      - mkdir -p tmpdir/
-      - defer: rm -rf tmpdir/     # Runs even if next command fails
-      - echo "Working..." > tmpdir/file.txt
+      - bunx vercel dev
 
-# Multiple defers (LIFO order)
-task:
-  complex:
+  build:
+    desc: "Build the project"
+    deps: [install-bun, clean]
     cmds:
-      - mkdir -p dir1/ dir2/
-      - defer: rm -rf dir1/       # Runs second
-      - defer: rm -rf dir2/       # Runs first
-      - echo "Working..."
-
-# Defer with task
-task:
-  main:
-    cmds:
-      - mkdir -p workdir/
-      - defer: { task: cleanup }  # Runs cleanup task at end
-      - echo "Working..."
-  
-  cleanup:
-    internal: true               # Hide from CLI
-    cmds:
-      - rm -rf workdir/
-
-# Error handling in defers
-task:
-  handle-errors:
-    cmds:
-      - defer: |
-          if [[ "{{.EXIT_CODE}}" != "" ]]; then
-            echo "Task failed with code {{.EXIT_CODE}}"
-            ./notify-team.sh
-          fi
-      - echo "Working..."
-      - exit 1  # Simulate failure
+      - bun run build
+    sources:
+      - "app/**/*.{ts,tsx}"
+      - "components/**/*.{ts,tsx}"
+    generates:
+      - ".next/**/*"
 ```
 
-Best Practices:
-1. Always use defer for cleanup operations
-2. Keep deferred tasks focused and atomic
-3. Use internal tasks for reusable cleanup logic
-4. Handle errors in deferred commands when needed
-5. Remember LIFO order when using multiple defers
-6. Use task-based defers for complex cleanup operations
+### Testing Tasks
+
+```yaml
+test_tasks:
+  test:all:
+    desc: "Run all tests"
+    deps: [test:setup]
+    cmds:
+      - task: test:unit
+      - task: test:integration
+      - task: test:e2e
+
+  test:unit:
+    desc: "Run unit tests"
+    cmds:
+      - bunx vitest run --config ./vitest.unit.config.ts
+
+  test:e2e:
+    desc: "Run end-to-end tests"
+    env:
+      PLAYWRIGHT_TEST_BASE_URL: "http://localhost:3000"
+    cmds:
+      - bunx playwright test
+```
+
+### Database Tasks
+
+```yaml
+database_tasks:
+  migrate:init:
+    cmds:
+      - bun scripts/migrate.ts migrations/001_init.sql
+
+  migrate:all:
+    cmds:
+      - task: migrate:init
+      - task: migrate:questions
+```
+
+### Utility Tasks
+
+```yaml
+utility_tasks:
+  clean:
+    desc: "Clean up artifacts"
+    cmds:
+      - find . -type d -name "debug" -exec rm -rf {} +
+      - find . -type f -name "*.log" -delete
+
+  generate-token:
+    desc: "Generate security token"
+    cmds:
+      - openssl rand -base64 {{default "32" .length}}
+```
 
 ## Task Attributes
 
 ### Core Task Attributes
+
 ```yaml
 task_name:
   # Core execution
@@ -136,6 +169,7 @@ task_name:
 ```
 
 ### Command Attributes
+
 ```yaml
 command_entry:
   # Basic command
@@ -168,6 +202,7 @@ command_entry:
 ```
 
 ### Dependency Attributes
+
 ```yaml
 dependency_entry:
   task: string                 # Task to execute
@@ -176,6 +211,7 @@ dependency_entry:
 ```
 
 ### Alternative Syntax Examples
+
 ```yaml
 # Simple command
 task_name: echo "command"
@@ -195,16 +231,19 @@ task_name:
 ```
 
 ### Up-to-date Methods
+
 - `checksum`: Compare file content checksums (default)
 - `timestamp`: Compare file modification times
 - `none`: Always run task
 
 ### Run Behaviors
+
 - `always`: Run every time (default)
 - `once`: Run only once per session
 - `when_changed`: Run when variables change
 
 ### Special Variables
+
 - `{{.TASK}}`: Current task name
 - `{{.USER_WORKING_DIR}}`: Original working directory
 - `{{.CHECKSUM}}`: Source files checksum
@@ -214,6 +253,7 @@ task_name:
 ## Configuration
 
 ### Global Settings
+
 ```yaml
 version: "3"
 
@@ -237,84 +277,10 @@ vars:
   TEST_ARGS: "--reporter=verbose"
 ```
 
-## Task Categories
-
-### Development Tasks
-```yaml
-development_tasks:
-  default:
-    desc: "Start development server"
-    deps: [install-bun, clean]
-    cmds:
-      - bunx vercel dev
-
-  build:
-    desc: "Build the project"
-    deps: [install-bun, clean]
-    cmds:
-      - bun run build
-    sources:
-      - "app/**/*.{ts,tsx}"
-      - "components/**/*.{ts,tsx}"
-    generates:
-      - ".next/**/*"
-```
-
-### Testing Tasks
-```yaml
-test_tasks:
-  test:all:
-    desc: "Run all tests"
-    deps: [test:setup]
-    cmds:
-      - task: test:unit
-      - task: test:integration
-      - task: test:e2e
-
-  test:unit:
-    desc: "Run unit tests"
-    cmds:
-      - bunx vitest run --config ./vitest.unit.config.ts
-
-  test:e2e:
-    desc: "Run end-to-end tests"
-    env:
-      PLAYWRIGHT_TEST_BASE_URL: "http://localhost:3000"
-    cmds:
-      - bunx playwright test
-```
-
-### Database Tasks
-```yaml
-database_tasks:
-  migrate:init:
-    cmds:
-      - bun scripts/migrate.ts migrations/001_init.sql
-
-  migrate:all:
-    cmds:
-      - task: migrate:init
-      - task: migrate:questions
-```
-
-### Utility Tasks
-```yaml
-utility_tasks:
-  clean:
-    desc: "Clean up artifacts"
-    cmds:
-      - find . -type d -name "debug" -exec rm -rf {} +
-      - find . -type f -name "*.log" -delete
-
-  generate-token:
-    desc: "Generate security token"
-    cmds:
-      - openssl rand -base64 {{default "32" .length}}
-```
-
 ## Task Structure
 
 ### Task Definition Pattern
+
 ```yaml
 task_pattern:
   name:
@@ -334,6 +300,7 @@ task_pattern:
 ```
 
 ### Task Dependencies
+
 ```yaml
 dependency_types:
   - task: Other tasks
@@ -345,6 +312,7 @@ dependency_types:
 ## Best Practices
 
 ### Task Organization
+
 ```yaml
 organization:
   - Group related tasks
@@ -355,6 +323,7 @@ organization:
 ```
 
 ### Performance
+
 ```yaml
 performance:
   - Cache task results
@@ -365,6 +334,7 @@ performance:
 ```
 
 ### Reliability
+
 ```yaml
 reliability:
   - Handle errors gracefully
@@ -375,6 +345,7 @@ reliability:
 ```
 
 ### CI Integration
+
 ```yaml
 ci_integration:
   - Define CI-specific tasks
@@ -387,6 +358,7 @@ ci_integration:
 ## Common Patterns
 
 ### Installation Tasks
+
 ```yaml
 install:
   install-bun:
@@ -398,6 +370,7 @@ install:
 ```
 
 ### Build Tasks
+
 ```yaml
 build:
   build:prod:
@@ -414,6 +387,7 @@ build:
 ```
 
 ### Test Tasks
+
 ```yaml
 test:
   test:setup:
@@ -429,177 +403,3 @@ test:
       - rm -rf coverage
       - rm -rf test-results
 ```
-
-# Task v3.32 Automation Rules
-
-## File Patterns
-- `Taskfile.yml` or `Taskfile.yaml` in root directory for main configuration
-- `taskfile.dist.yml` for distributable configuration
-- `.env` files for environment variables
-- `taskfiles/**/*.yml` for included task files
-
-## Code Generation Rules
-
-### Base Configuration
-```yaml
-version: '3'
-
-env:
-  ENV: development
-
-dotenv: ['.env', '{{.ENV}}/.env']
-
-tasks:
-  default:
-    desc: Default task description
-    cmds:
-      - echo "Default task"
-```
-
-### Task Structure
-```yaml
-tasks:
-  task-name:
-    desc: Task description
-    summary: |
-      Detailed task summary
-      Multiple lines supported
-    deps: [dependency1, dependency2]
-    vars:
-      VAR1: value1
-      VAR2:
-        sh: echo "dynamic-value"
-    env:
-      ENV_VAR: value
-    cmds:
-      - echo "Command 1"
-      - task: other-task
-    sources:
-      - src/**/*.ts
-    generates:
-      - dist/**/*.js
-```
-
-## Development Patterns
-
-### Task Organization
-- Group related tasks in separate files
-- Use includes for modularity
-- Leverage dependencies for task orchestration
-- Implement proper error handling
-
-### Environment Management
-- Use `.env` files for environment variables
-- Support multiple environments (dev, prod)
-- Handle secrets securely
-- Implement environment validation
-
-### Task Dependencies
-- Define clear task dependencies
-- Use parallel execution when possible
-- Handle dependency failures gracefully
-- Implement proper cleanup
-
-## Architecture Guidelines
-
-### File Structure
-```yaml
-project_structure:
-  - Taskfile.yml          # Main taskfile
-  - taskfiles/            # Included taskfiles
-    - build.yml          # Build tasks
-    - test.yml          # Test tasks
-    - deploy.yml        # Deploy tasks
-  - .env                 # Environment variables
-  - .env.example        # Example environment file
-```
-
-### Task Composition
-- Break down complex tasks into smaller ones
-- Use dependencies for task orchestration
-- Implement proper error handling
-- Use variables for configuration
-
-### Performance Optimization
-- Use checksums for task caching
-- Implement proper source/generate patterns
-- Leverage parallel execution
-- Optimize task dependencies
-
-## Common Anti-patterns
-- Avoid shell-specific commands
-- Don't mix environment concerns
-- Avoid hardcoded paths
-- Don't ignore task errors
-- Avoid unnecessary task dependencies
-
-## Recommended Patterns
-
-### Task Naming
-```yaml
-naming_conventions:
-  - Use descriptive task names
-  - Group related tasks with prefixes
-  - Use hyphens for multi-word tasks
-  - Keep names concise but clear
-```
-
-### Error Handling
-```yaml
-error_handling:
-  - Use proper exit codes
-  - Implement cleanup with defer
-  - Handle dependency failures
-  - Provide clear error messages
-```
-
-### Task Documentation
-```yaml
-documentation:
-  - Add task descriptions
-  - Provide detailed summaries
-  - Document dependencies
-  - Include usage examples
-```
-
-## Best Practices
-
-### Task Definition
-```yaml
-best_practices:
-  - One task per responsibility
-  - Clear dependency chain
-  - Proper error handling
-  - Consistent naming
-  - Good documentation
-```
-
-### Environment Variables
-```yaml
-environment:
-  - Use .env files
-  - Support multiple environments
-  - Secure sensitive data
-  - Validate required variables
-```
-
-### Performance
-```yaml
-performance:
-  - Use checksums
-  - Implement caching
-  - Parallel execution
-  - Optimize dependencies
-```
-
-## Migration Guidelines
-- Update to version 3 syntax
-- Use new task features
-- Implement proper error handling
-- Update task documentation
-
-## Type Safety
-- Use proper variable types
-- Validate input parameters
-- Handle type conversions
-- Implement proper checks 

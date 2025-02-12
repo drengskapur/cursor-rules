@@ -1,0 +1,328 @@
+# Auth.js Standards
+
+## Configuration
+
+### Base Setup
+
+```yaml
+requirements:
+  version: "^5.0.0"
+  dependencies:
+    - "next-auth@beta"
+  files:
+    - auth.config.ts: Base configuration and options
+    - auth.ts: Auth.js initialization and exports
+    - middleware.ts: Edge middleware (optional)
+```
+
+### Project Configuration
+
+```ts
+// auth.config.ts
+import type { NextAuthConfig } from "next-auth"
+import Google from "next-auth/providers/google"
+
+export const authConfig = {
+  providers: [Google],
+  session: { strategy: "jwt" },
+  pages: {
+    signIn: "/login",
+    error: "/error"
+  },
+  callbacks: {
+    jwt({ token, user }) {
+      if (user) token.id = user.id
+      return token
+    },
+    session({ session, token }) {
+      if (session.user) {
+        session.user.id = token.id as string
+      }
+      return session
+    },
+    authorized({ auth, request: { nextUrl } }) {
+      const isLoggedIn = !!auth?.user
+      const isProtected = nextUrl.pathname.startsWith('/api/')
+      if (isProtected) return isLoggedIn
+      return true
+    }
+  }
+} satisfies NextAuthConfig
+
+// auth.ts
+import NextAuth from "next-auth"
+import { authConfig } from "./auth.config"
+
+export const { auth, signIn, signOut } = NextAuth(authConfig)
+export { auth as middleware } from "@/auth"
+```
+
+## Implementation Standards
+
+### Route Handlers
+
+```ts
+// Method 1: Manual session check (Recommended for API routes)
+import { auth } from "@/auth"
+import { NextResponse } from "next/server"
+
+export async function GET() {
+  const session = await auth()
+  if (!session) {
+    return new Response("Unauthorized", { status: 401 })
+  }
+  
+  // Your protected API logic here
+  return NextResponse.json({ data: "Protected Data" })
+}
+
+// Method 2: Using auth() middleware (Alternative)
+import { auth } from "@/auth"
+
+export const GET = auth(async function GET() {
+  return Response.json({ data: "Protected Data" })
+})
+```
+
+### Server Components
+
+```ts
+// Server Component Pattern
+import { auth } from "@/auth"
+import { redirect } from "next/navigation"
+
+export default async function ProtectedPage() {
+  const session = await auth()
+  if (!session) redirect("/login")
+  
+  return <div>Protected Content</div>
+}
+```
+
+### Client Components
+
+```tsx
+// Client Component Pattern
+"use client"
+import { signIn, signOut } from "@/auth"
+
+export function AuthButtons() {
+  return (
+    <>
+      <button onClick={() => signIn()}>Sign In</button>
+      <button onClick={() => signOut()}>Sign Out</button>
+    </>
+  )
+}
+```
+
+### Middleware
+
+```ts
+// middleware.ts
+import { auth } from "@/auth"
+
+export default auth
+
+export const config = {
+  matcher: ["/((?!api|_next/static|_next/image|favicon.ico).*)"],
+}
+```
+
+## Security Practices
+
+### Session Handling
+
+```yaml
+session_config:
+  strategy: "jwt"  # Default and recommended
+  maxAge: 30 * 24 * 60 * 60  # 30 days
+  updateAge: 24 * 60 * 60  # 24 hours
+```
+
+### Environment Variables
+
+```yaml
+required_env:
+  - AUTH_SECRET: Required for JWT encryption
+  - AUTH_URL: Your site URL (optional, inferred in development)
+  
+oauth_env_pattern:
+  format: "AUTH_{PROVIDER}_{ID|SECRET}"
+  example:
+    - AUTH_GITHUB_ID
+    - AUTH_GITHUB_SECRET
+```
+
+### Error Handling
+
+```ts
+try {
+  await signIn("credentials", credentials)
+} catch (error) {
+  if (error instanceof AuthError) {
+    switch (error.type) {
+      case "CredentialsSignin":
+        return "Invalid credentials"
+      default:
+        return "Something went wrong"
+    }
+  }
+  throw error
+}
+```
+
+## Best Practices
+
+### Route Protection
+
+```yaml
+protection_patterns:
+  middleware:
+    - Use middleware for broad protection
+    - Configure matchers appropriately
+    - Handle public routes
+  
+  route_handlers:
+    - Prefer manual session check for API routes
+    - Return appropriate status codes
+    - Handle unauthorized access gracefully
+  
+  components:
+    - Protect server components with auth()
+    - Use redirect() for unauthorized
+    - Handle loading states
+```
+
+### Authentication Flow
+
+```yaml
+auth_flow:
+  setup:
+    - Split config between auth.config.ts and auth.ts
+    - Configure providers with environment variables
+    - Define protected routes and callbacks
+  
+  session:
+    - Use JWT strategy by default
+    - Implement proper session handling
+    - Configure session maxAge and updateAge
+  
+  error_handling:
+    - Custom error pages
+    - Graceful fallbacks
+    - User feedback
+```
+
+### Performance
+
+```yaml
+performance:
+  optimization:
+    - Use edge middleware where possible
+    - Split configuration for edge compatibility
+    - Implement proper caching strategies
+  
+  security:
+    - CSRF protection enabled by default
+    - Secure cookie handling
+    - Rate limiting for auth endpoints
+```
+
+### Type Safety
+
+```ts
+// Extend session types
+declare module "next-auth" {
+  interface Session {
+    user: {
+      id: string
+    } & DefaultSession["user"]
+  }
+}
+
+// Use type-safe config
+export const authConfig = {
+  // ... config
+} satisfies NextAuthConfig
+```
+
+## Common Patterns
+
+### Protected API Routes
+
+```ts
+// Protected API route pattern
+import { auth } from "@/auth"
+import { NextResponse } from "next/server"
+
+export async function GET() {
+  const session = await auth()
+  if (!session) {
+    return new Response("Unauthorized", { status: 401 })
+  }
+  
+  // Your protected API logic here
+  return NextResponse.json({ data: "Protected Data" })
+}
+```
+
+### Protected Pages
+
+```ts
+// Protected page pattern
+import { auth } from "@/auth"
+import { redirect } from "next/navigation"
+
+export default async function ProtectedPage() {
+  const session = await auth()
+  if (!session) redirect("/login")
+  
+  return (
+    <div>
+      <h1>Protected Content</h1>
+      <p>Welcome {session.user.name}</p>
+    </div>
+  )
+}
+```
+
+### Auth Callbacks
+
+```ts
+callbacks: {
+  authorized({ auth, request: { nextUrl } }) {
+    const isLoggedIn = !!auth?.user
+    const isProtected = nextUrl.pathname.startsWith('/protected')
+    
+    if (isProtected) return isLoggedIn
+    return true
+  },
+  
+  async session({ session, token }) {
+    if (session.user) {
+      session.user.id = token.id
+    }
+    return session
+  },
+  
+  async jwt({ token, user }) {
+    if (user) {
+      token.id = user.id
+    }
+    return token
+  }
+}
+```
+
+### Error Pages
+
+```ts
+pages: {
+  signIn: "/login",
+  signOut: "/logout",
+  error: "/error",
+  verifyRequest: "/verify-request",
+  newUser: "/new-user"
+}
+```

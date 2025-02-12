@@ -8,6 +8,7 @@ globs: ["**/store/**/*", "**/*.store.ts"]
 ## Configuration
 
 ### Base Setup
+
 ```yaml
 requirements:
   version: "^4.5.0"
@@ -20,6 +21,7 @@ requirements:
 ```
 
 ### Store Structure
+
 ```ts
 // store/useCounterStore.ts
 import { create } from 'zustand';
@@ -48,6 +50,7 @@ export const useCounterStore = create<CounterState>()(
 ## Implementation Patterns
 
 ### Store Organization
+
 ```yaml
 store_patterns:
   domain:
@@ -67,6 +70,7 @@ store_patterns:
 ```
 
 ### State Management
+
 ```yaml
 state_patterns:
   updates:
@@ -88,6 +92,7 @@ state_patterns:
 ## Integration Examples
 
 ### Basic Store
+
 ```ts
 // store/useAppStore.ts
 import { create } from 'zustand';
@@ -107,6 +112,7 @@ export const useAppStore = create<AppState>((set) => ({
 ```
 
 ### With Middleware
+
 ```ts
 // store/useAuthStore.ts
 import { create } from 'zustand';
@@ -133,6 +139,7 @@ export const useAuthStore = create<AuthState>()(
 ```
 
 ### With TypeScript
+
 ```ts
 // store/types.ts
 type User = {
@@ -165,6 +172,7 @@ export const useUserStore = create<UserState>()((set) => ({
 ## Best Practices
 
 ### Performance
+
 ```yaml
 performance:
   - Selective updates
@@ -175,6 +183,7 @@ performance:
 ```
 
 ### State Design
+
 ```yaml
 design_principles:
   - Single source of truth
@@ -185,6 +194,7 @@ design_principles:
 ```
 
 ### Development
+
 ```yaml
 development:
   - DevTools integration
@@ -195,6 +205,7 @@ development:
 ```
 
 ### Testing
+
 ```yaml
 testing:
   - Unit tests
@@ -202,4 +213,4 @@ testing:
   - Mock stores
   - Action testing
   - State snapshots
-``` 
+```
